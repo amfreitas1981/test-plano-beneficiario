@@ -42,18 +42,19 @@ public class UsuarioService implements UserDetailsService {
         var usuario = new Usuario(dados, senhaBCrypt, perfis);
 
         this.usuarioRepository.save(usuario);
+
         return new DadosUsuario(usuario);
     }
 
     private List<Perfil> carregarPerfis(Boolean admin) {
         var perfis = new ArrayList<Perfil>();
-        var perfilUser = perfilRepository.findByNome("ROLE_USER");
-        perfis.add(perfilUser);
 
-        if (admin != null && admin) {
+        if (admin != null && admin == true) {
             var perfilAdmin = perfilRepository.findByNome("ROLE_ADMIN");
             perfis.add(perfilAdmin);
         }
+        var perfilUser = perfilRepository.findByNome("ROLE_USER");
+        perfis.add(perfilUser);
 
         return perfis;
     }
