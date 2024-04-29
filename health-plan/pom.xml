@@ -5,14 +5,15 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.3.0-M2</version>
+<!--		<version>3.3.0-M2</version>-->
+		<version>3.2.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.plano.saude</groupId>
 	<artifactId>cadastro</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>cadastro</name>
-	<description>Microserviço voltado para plano de saúde</description>
+	<description>Microservico voltado para plano de saude</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>

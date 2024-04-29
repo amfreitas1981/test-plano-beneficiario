@@ -22,7 +22,5 @@ public record DadosCadastroBeneficiario(
         @NotNull
         @Valid
         List<DadosCadastroDocumento> documentos,
-        @NotNull
-        @Valid
         DadosEndereco endereco) {
 }
