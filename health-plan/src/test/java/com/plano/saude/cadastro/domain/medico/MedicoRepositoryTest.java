@@ -40,13 +40,14 @@ class MedicoRepositoryTest {
         // given ou arrange
         var proximaSegundaAs10 = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY)).atTime(10, 0);
 
-        var medico = cadastrarMedico("Medico", "medico@plano.saude", "123456", Especialidade.CARDIOLOGIA);
+        var medico = cadastrarMedico(1L, "Medico", "medico@plano.saude", "123456", Especialidade.CARDIOLOGIA);
         var beneficiario = cadastrarBeneficiario(
+                null,
                 "Beneficiário",
                 "234-5678",
-                LocalDate.of(1983,06,18),
-                LocalDate.of(2023,03,27),
-                LocalDate.of(2023,03,27),
+                LocalDate.parse("1983-06-18"),
+                LocalDate.parse("2023-03-27"),
+                LocalDate.parse("2023-03-27"),
                 dadosCadastroDocumento(),
                 dadosEndereco());
         cadastrarConsulta(medico, beneficiario, proximaSegundaAs10);
@@ -64,7 +65,7 @@ class MedicoRepositoryTest {
         // given ou arrange
         var proximaSegundaAs10 = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY)).atTime(10, 0);
 
-        var medico = cadastrarMedico("Medico", "medico@plano.saude", "123456", Especialidade.CARDIOLOGIA);
+        var medico = cadastrarMedico(1L, "Medico", "medico@plano.saude", "123456", Especialidade.CARDIOLOGIA);
 
         // when ou act
         var medicoLivre = medicoRepository.escolherMedicoAleatorioLivreNaData(Especialidade.CARDIOLOGIA, proximaSegundaAs10);
@@ -74,30 +75,30 @@ class MedicoRepositoryTest {
     }
 
     private void cadastrarConsulta(Medico medico, Beneficiario beneficiario, LocalDateTime data) {
-        em.persist(new Consulta(null, medico, beneficiario, data));
+        em.persist(new Consulta(null, medico, beneficiario, data, null));
     }
 
-    private Medico cadastrarMedico(String nome, String email, String crm, Especialidade especialidade) {
-        var medico = new Medico(dadosMedico(nome, email, crm, especialidade));
+    private Medico cadastrarMedico(Long id, String nome, String email, String crm, Especialidade especialidade) {
+        var medico = new Medico(dadosMedico(id, nome, email, crm, especialidade));
         em.persist(medico);
 
         return medico;
     }
 
-    private Beneficiario cadastrarBeneficiario(String nome, String telefone, LocalDate dataNascimento, LocalDate dataInclusao, LocalDate dataAtualizacao, List<DadosCadastroDocumento> dadosCadastroDocumentos, DadosEndereco dadosEndereco){
-        var beneficiario = new Beneficiario(dadosBeneficiario(nome, telefone, dataNascimento, dataAtualizacao, dataInclusao, dadosCadastroDocumentos, dadosEndereco));
+    private Beneficiario cadastrarBeneficiario(Long id, String nome, String telefone, LocalDate dataNascimento, LocalDate dataInclusao, LocalDate dataAtualizacao, List<DadosCadastroDocumento> dadosCadastroDocumentos, DadosEndereco dadosEndereco){
+        var beneficiario = new Beneficiario(dadosBeneficiario(id, nome, telefone, dataNascimento, dataAtualizacao, dataInclusao, dadosCadastroDocumentos, dadosEndereco));
         em.persist(beneficiario);
 
         return beneficiario;
     }
 
-    private DadosCadastroBeneficiario dadosBeneficiario(String nome, String telefone, LocalDate dataNascimento, LocalDate dataAtualizacao, LocalDate dataInclusao, List<DadosCadastroDocumento> dadosCadastroDocumentos, DadosEndereco dadosEndereco) {
+    private DadosCadastroBeneficiario dadosBeneficiario(Long id, String nome, String telefone, LocalDate dataNascimento, LocalDate dataAtualizacao, LocalDate dataInclusao, List<DadosCadastroDocumento> dadosCadastroDocumentos, DadosEndereco dadosEndereco) {
         return new DadosCadastroBeneficiario(
                 nome, telefone, dataNascimento, dataInclusao, dataAtualizacao, dadosCadastroDocumentos, dadosEndereco
         );
     }
 
-    private DadosCadastroMedico dadosMedico(String nome, String email, String crm, Especialidade especialidade) {
+    private DadosCadastroMedico dadosMedico(Long id, String nome, String email, String crm, Especialidade especialidade) {
         return new DadosCadastroMedico(
                 nome,
                 email,
@@ -112,10 +113,10 @@ class MedicoRepositoryTest {
         return Collections.singletonList(new DadosCadastroDocumento(
                 TipoDocumento.CARTEIRA_NACIONAL_HABILITACAO,
                 "123456789",
-                LocalDate.of(2010, 03, 18),
+                LocalDate.parse("2010-03-18"),
                 "Documento Teste",
-                LocalDate.of(2023, 12, 18),
-                LocalDate.of(2023, 12, 18)
+                LocalDate.parse("2023-12-18"),
+                LocalDate.parse("2023-12-18")
         ));
     }
 
