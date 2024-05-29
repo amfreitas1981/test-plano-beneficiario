@@ -32,7 +32,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -161,13 +160,8 @@ class BeneficiarioControllerTest {
     @DisplayName("Deveria devolver código http 404, quando as informações estão inválidas")
     @WithMockUser
     void listBeneficiaryCenario1() throws Exception {
-        Pageable pageable = Pageable.unpaged(Sort.by(new String[]{"Nome"}));
-
-        var repository = beneficiarioRepository;
-        repository.findAllByAtivoTrue(pageable);
-
         // Simular que o pageable não existe
-        given(repository).willThrow(EntityNotFoundException.class);
+        given(beneficiarioRepository.findAllByAtivoTrue(any())).willThrow(EntityNotFoundException.class);
 
         var response = mvc.perform(get("/beneficiaries")
                         .param("page", "0")
@@ -273,7 +267,7 @@ class BeneficiarioControllerTest {
         var repository = beneficiarioRepository;
         repository.getReferenceById(id);
 
-        // simulando que o id não existe
+        // Simular que o id não existe
         given(repository).willThrow(EntityNotFoundException.class);
 
         var response = mvc.perform(get("/beneficiaries/{id}", id))
@@ -300,7 +294,14 @@ class BeneficiarioControllerTest {
                 LocalDate.parse("2024-04-16"),
                 LocalDate.parse("2024-04-16"));
 
-        DadosEndereco dadosEndereco = new DadosEndereco("Rua Casas Unidas", "Bairro", "12345-789", "Cidade", "SP", "Casa", "789");
+        DadosEndereco dadosEndereco = new DadosEndereco(
+                "Rua Casas Unidas",
+                "Bairro",
+                "12345-789",
+                "Cidade",
+                "SP",
+                "Casa",
+                "789");
 
         DadosAtualizacaoBeneficiario dadosAtualizacaoBeneficiario = new DadosAtualizacaoBeneficiario(
                 null,
@@ -310,10 +311,10 @@ class BeneficiarioControllerTest {
                 Collections.singletonList(dadosAtualizacaoDocumento)
         );
 
-        // considerando que sua classe Endereco tenha um construtor que receba um objeto DadosEndereco:
+        // Considerar que sua classe Endereco tenha um construtor que receba um objeto DadosEndereco:
         var enderecoEsperado = new Endereco(dadosAtualizacaoBeneficiario.endereco());
 
-        // considerando que sua classe DadosDetalhamentoDocumento tenha um construtor que receba uma lista DadosCadastroDocumento:
+        // Considerar que sua classe DadosDetalhamentoDocumento tenha um construtor que receba uma lista DadosCadastroDocumento:
         List<DadosDetalhamentoDocumento> documentosEsperados = dadosAtualizacaoBeneficiario.documentos().stream().map(DadosDetalhamentoDocumento::new).toList();
 
         DadosDetalhamentoBeneficiario dadosDetalhamentoBeneficiario = new DadosDetalhamentoBeneficiario(
@@ -357,7 +358,14 @@ class BeneficiarioControllerTest {
                 LocalDate.parse("2024-04-16"),
                 LocalDate.parse("2024-04-16"));
 
-        DadosEndereco dadosEndereco = new DadosEndereco("Rua xpto", "Bairro", "12345-789", "Cidade", "SP", "Casa", "789");
+        DadosEndereco dadosEndereco = new DadosEndereco(
+                "Rua xpto",
+                "Bairro",
+                "12345-789",
+                "Cidade",
+                "SP",
+                "Casa",
+                "789");
 
         DadosAtualizacaoBeneficiario dadosAtualizacaoBeneficiario = new DadosAtualizacaoBeneficiario(
                 2L,
@@ -367,7 +375,7 @@ class BeneficiarioControllerTest {
                 Collections.singletonList(dadosAtualizacaoDocumento)
         );
 
-        // simulando que o id não existe
+        // Simular que o id não existe
         given(repository).willThrow(EntityNotFoundException.class);
 
         var response = mvc
@@ -394,7 +402,14 @@ class BeneficiarioControllerTest {
                 LocalDate.parse("2024-04-16"),
                 LocalDate.parse("2024-04-17"));
 
-        DadosEndereco dadosEndereco = new DadosEndereco("Rua Morada do Beneficiario", "Bairro", "12345-789", "Cidade", "SP", "Casa", "789");
+        DadosEndereco dadosEndereco = new DadosEndereco(
+                "Rua Morada do Beneficiario",
+                "Bairro",
+                "12345-789",
+                "Cidade",
+                "SP",
+                "Casa",
+                "789");
 
         DadosAtualizacaoBeneficiario dadosAtualizacaoBeneficiario = new DadosAtualizacaoBeneficiario(
                 null,
@@ -404,10 +419,10 @@ class BeneficiarioControllerTest {
                 Collections.singletonList(dadosAtualizacaoDocumento)
         );
 
-        // considerando que sua classe Endereco tenha um construtor que receba um objeto DadosEndereco:
+        // Considerando que sua classe Endereco tenha um construtor que receba um objeto DadosEndereco:
         var enderecoEsperado = new Endereco(dadosAtualizacaoBeneficiario.endereco());
 
-        // considerando que sua classe DadosDetalhamentoDocumento tenha um construtor que receba uma lista DadosCadastroDocumento:
+        // Considerando que sua classe DadosDetalhamentoDocumento tenha um construtor que receba uma lista DadosCadastroDocumento:
         List<DadosDetalhamentoDocumento> documentosEsperados = dadosAtualizacaoBeneficiario.documentos().stream().map(DadosDetalhamentoDocumento::new).toList();
 
         DadosDetalhamentoBeneficiario dadosDetalhamentoBeneficiario = new DadosDetalhamentoBeneficiario(
@@ -420,7 +435,7 @@ class BeneficiarioControllerTest {
                 documentosEsperados,
                 enderecoEsperado);
 
-        // simulando que o id existe
+        // Simular que o id existe
         when(beneficiarioRepository.getReferenceById(any())).thenReturn(new Beneficiario(dadosDetalhamentoBeneficiario));
 
         var response = mvc
@@ -446,7 +461,7 @@ class BeneficiarioControllerTest {
         var repository = beneficiarioRepository;
         repository.deleteById(id);
 
-        // simulando que o id não existe
+        // Simular que o id não existe
         given(repository).willThrow(EntityNotFoundException.class);
 
         var response = mvc.perform(delete("/beneficiaries/{id}", id))
@@ -473,7 +488,7 @@ class BeneficiarioControllerTest {
         Long id = 2L;
         var beneficiario = beneficiarioRepository.getReferenceById(id);
 
-        // simulando que o id não existe
+        // Simular que o id não existe
         given(beneficiario).willThrow(EntityNotFoundException.class);
 
         var response = mvc.perform(delete("/beneficiaries/deletelogicId/{id}", id))
@@ -490,7 +505,7 @@ class BeneficiarioControllerTest {
 
         var repository = beneficiarioRepository.getReferenceById(id);
 
-        // simular a ação de inativar o beneficiário no efeito de remover (cancelar).
+        // Simular a ação de inativar o beneficiário no efeito de remover (cancelar).
         Beneficiario beneficiario = new Beneficiario();
         beneficiario.deleteOrInvalidateInformations();
         when(repository).thenReturn(beneficiario);
