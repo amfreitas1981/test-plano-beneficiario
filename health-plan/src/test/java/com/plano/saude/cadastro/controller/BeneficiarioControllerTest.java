@@ -1,8 +1,11 @@
 package com.plano.saude.cadastro.controller;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.plano.saude.cadastro.domain.beneficiario.Beneficiario;
 import com.plano.saude.cadastro.domain.beneficiario.BeneficiarioRepository;
 import com.plano.saude.cadastro.domain.beneficiario.DadosAtualizacaoBeneficiario;
@@ -12,6 +15,7 @@ import com.plano.saude.cadastro.domain.beneficiario.DadosDetalhamentoBeneficiari
 import com.plano.saude.cadastro.domain.beneficiario.DadosListagemBeneficiario;
 import com.plano.saude.cadastro.domain.documento.DadosCadastroDocumento;
 import com.plano.saude.cadastro.domain.documento.DadosDetalhamentoDocumento;
+import com.plano.saude.cadastro.domain.documento.DadosListagemDocumento;
 import com.plano.saude.cadastro.domain.documento.Documento;
 import com.plano.saude.cadastro.domain.documento.TipoDocumento;
 import com.plano.saude.cadastro.domain.endereco.DadosEndereco;
@@ -40,11 +44,16 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -63,6 +72,9 @@ class BeneficiarioControllerTest {
 
     @Autowired
     private JacksonTester<DadosDetalhamentoBeneficiario> dadosDetalhamentoBeneficiarioJson;
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record DadosBeneficiarios(@JsonProperty("content") List<DadosListagemBeneficiario> beneficiarios) {};
 
     @MockBean
     private BeneficiarioRepository beneficiarioRepository;
@@ -90,14 +102,7 @@ class BeneficiarioControllerTest {
                 LocalDate.parse("2023-12-18")
         );
 
-        DadosEndereco dadosEndereco = new DadosEndereco(
-                "Rua xpto",
-                "Bairro",
-                "12345-789",
-                "Cidade",
-                "SP",
-                "Casa",
-                "789");
+        DadosEndereco dadosEndereco = new DadosEndereco("Rua xpto", "Bairro", "12345-789", "Cidade", "SP", "Casa", "789");
 
         DadosCadastroBeneficiario dadosCadastroBeneficiario = new DadosCadastroBeneficiario(
                 "Nome",
@@ -161,7 +166,7 @@ class BeneficiarioControllerTest {
         var repository = beneficiarioRepository;
         repository.findAllByAtivoTrue(pageable);
 
-        // simulando que o pageable não existe
+        // Simular que o pageable não existe
         given(repository).willThrow(EntityNotFoundException.class);
 
         var response = mvc.perform(get("/beneficiaries")
@@ -177,48 +182,41 @@ class BeneficiarioControllerTest {
     @DisplayName("Deveria devolver código http 200, quando as informações estiverem válidas")
     @WithMockUser
     void listBeneficiaryCenario2() throws Exception {
-        // arrange
+        // Arrange
 
         /**
-         * Usada as anotações @Builder e @AllArgsConstructor do Lombok nas classes Documento, Endereco e Beneficiario.
+         * Usada as anotações @Builder e @AllArgsConstructor do Lombok nas classes Documento e Beneficiario.
          * Assim ele gera um método estático que retorna um builder do objeto.
          */
-        Endereco endereco = Endereco.builder()
-                .logradouro("logradouro")
-                .bairro("bairro")
-                .cep("01000-000")
-                .cidade("cidade")
-                .uf("UF")
-                .complemento("compl")
-                .numero("123")
-                .build();
-
-        Documento documentos = Documento.builder()
+        List<Documento> documentos = List.of(Documento.builder()
                 .id(1L)
                 .tipoDocumento(TipoDocumento.CARTEIRA_NACIONAL_HABILITACAO)
                 .numero("123456")
-                .dataExpedicao(LocalDate.parse("2020-09-02"))
-                .beneficiario(Beneficiario.builder().build())
+                .dataExpedicao(LocalDate.now().minusMonths(3L))
                 .descricao("Teste descricao")
-                .dataInclusao(LocalDate.parse("2021-08-14"))
-                .dataAtualizacao(LocalDate.parse("2021-09-17"))
-                .build();
+                .dataInclusao(LocalDate.now().minusDays(10L))
+                .dataAtualizacao(LocalDate.now().minusDays(5L))
+                .ativo(true)
+                .build());
 
         Beneficiario beneficiario = Beneficiario.builder()
                 .id(1L)
                 .nome("Beneficiario-san")
                 .telefone("1145785230")
-                .dataInclusao(LocalDate.parse("2018-03-18"))
-                .dataNascimento(LocalDate.parse("1983-04-14"))
-                .dataAtualizacao(LocalDate.parse("2023-11-23"))
-                .documentos(Collections.singletonList(documentos))
-                .endereco(endereco)
+                .dataInclusao(LocalDate.now().minusDays(10L))
+                .dataNascimento(LocalDate.now().minusYears(26L))
+                .dataAtualizacao(LocalDate.now().minusDays(5L))
+                .documentos(documentos)
+                .endereco(new Endereco())
+                .ativo(true)
                 .build();
+
+        documentos.get(0).setBeneficiario(beneficiario);
 
         Page<Beneficiario> beneficiarios = new PageImpl<>(List.of(beneficiario));
         when(beneficiarioRepository.findAllByAtivoTrue(any(Pageable.class))).thenReturn(beneficiarios);
 
-        // act
+        // Act
         var result = mvc.perform(get("/beneficiaries")
                         .param("page", "0")
                         .param("size", "10")
@@ -228,27 +226,42 @@ class BeneficiarioControllerTest {
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+        objectMapper.registerModule(new JavaTimeModule());
 
-        Page<DadosListagemBeneficiario> responseBody = null;
+        DadosBeneficiarios responseBody = null;
         try {
             String json = result.getResponse().getContentAsString();
-            responseBody = objectMapper.readValue(json, new TypeReference<PageImpl<DadosListagemBeneficiario>>() {});
+            responseBody = objectMapper.readValue(json, new TypeReference<DadosBeneficiarios>() {});
         } catch (Exception e) {
             e.printStackTrace();
         }
+        DadosListagemBeneficiario objectResult = responseBody.beneficiarios().get(0);
 
-        // assert
-        assertThat(responseBody).isNotNull();
-        assertThat(responseBody.getContent()).hasSize(1);
+        // Asserts
+        assertNotNull(responseBody);
+        assertFalse(responseBody.beneficiarios().isEmpty());
+        assertEquals(1, responseBody.beneficiarios().size());
 
-        assertEquals(responseBody.getContent().get(0).id(), beneficiario.getId());
-        assertEquals(responseBody.getContent().get(0).nome(), beneficiario.getNome());
-        assertEquals(responseBody.getContent().get(0).telefone(), beneficiario.getTelefone());
-        assertEquals(responseBody.getContent().get(0).dataInclusao(), beneficiario.getDataInclusao());
-        assertEquals(responseBody.getContent().get(0).dataNascimento(), beneficiario.getDataNascimento());
-        assertEquals(responseBody.getContent().get(0).dataAtualizacao(), beneficiario.getDataAtualizacao());
-        assertEquals(responseBody.getContent().get(0).documentos(), beneficiario.getDocumentos());
-        assertEquals(responseBody.getContent().get(0).endereco(), beneficiario.getEndereco());
+        assertEquals(objectResult.id(), beneficiario.getId());
+        assertEquals(objectResult.nome(), beneficiario.getNome());
+        assertEquals(objectResult.telefone(), beneficiario.getTelefone());
+        assertEquals(objectResult.dataInclusao(), beneficiario.getDataInclusao());
+        assertEquals(objectResult.dataNascimento(), beneficiario.getDataNascimento());
+        assertEquals(objectResult.dataAtualizacao(), beneficiario.getDataAtualizacao());
+
+        // Precisa comparar os atributos, pois os objetos são diferentes
+
+        DadosListagemDocumento documentoResult = objectResult.documentos().get(0);
+        Documento documentoBeneficiario = beneficiario.getDocumentos().get(0);
+        assertEquals(documentoResult.id(), documentoBeneficiario.getId());
+        assertEquals(documentoResult.tipoDocumento(), documentoBeneficiario.getTipoDocumento());
+        assertEquals(documentoResult.numero(), documentoBeneficiario.getNumero());
+        assertEquals(documentoResult.dataExpedicao(), documentoBeneficiario.getDataExpedicao());
+        assertEquals(documentoResult.descricao(), documentoBeneficiario.getDescricao());
+        assertEquals(documentoResult.dataInclusao(), documentoBeneficiario.getDataInclusao());
+        assertEquals(documentoResult.dataAtualizacao(), documentoBeneficiario.getDataAtualizacao());
+
+        // Passado o endereço com atributos null. Não tem necessidade de validá-los
     }
 
     @Test
