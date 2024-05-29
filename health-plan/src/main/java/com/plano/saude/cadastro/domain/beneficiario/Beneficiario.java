@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,7 @@ import java.util.List;
 @Table(name = "beneficiarios")
 @Entity(name = "Beneficiario")
 @Getter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
@@ -85,7 +87,8 @@ public class Beneficiario {
             this.endereco.atualizarInformacoes(dados.endereco());
         }
         if (dados.documentos() != null){
-            this.documentos.listIterator();
+            this.documentos = dados.documentos().stream().map(Documento::new).toList();
+            this.documentos.forEach(d -> d.setBeneficiario(this));
         }
     }
 

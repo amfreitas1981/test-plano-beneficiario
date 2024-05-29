@@ -1,6 +1,7 @@
 package com.plano.saude.cadastro.domain.documento;
 
 import com.plano.saude.cadastro.domain.beneficiario.Beneficiario;
+import com.plano.saude.cadastro.domain.beneficiario.DadosAtualizacaoDocumento;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -10,10 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
@@ -21,6 +19,7 @@ import java.time.LocalDate;
 @Table(name = "documentos")
 @Entity(name = "Documento")
 @Getter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
@@ -61,7 +60,22 @@ public class Documento {
         this.ativo = true;
     }
 
-    public Documento(DadosDetalhamentoDocumento dadosDetalhamentoDocumento) {
+    public Documento(DadosDetalhamentoDocumento detalhamentoDocumento) {
+        this.tipoDocumento = detalhamentoDocumento.tipoDocumento();
+        this.numero = detalhamentoDocumento.numero();
+        this.dataExpedicao = detalhamentoDocumento.dataExpedicao();
+        this.descricao = detalhamentoDocumento.descricao();
+        this.dataInclusao = detalhamentoDocumento.dataInclusao();
+        this.dataAtualizacao = detalhamentoDocumento.dataAtualizacao();
+    }
+
+    public Documento(DadosAtualizacaoDocumento atualizacaoDocumento) {
+        this.tipoDocumento = atualizacaoDocumento.tipoDocumento();
+        this.numero = atualizacaoDocumento.numero();
+        this.dataExpedicao = atualizacaoDocumento.dataExpedicao();
+        this.descricao = atualizacaoDocumento.descricao();
+        this.dataInclusao = atualizacaoDocumento.dataInclusao();
+        this.dataAtualizacao = atualizacaoDocumento.dataAtualizacao();
     }
 
     public void setBeneficiario(Beneficiario beneficiario){

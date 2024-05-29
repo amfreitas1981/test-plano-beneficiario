@@ -2,7 +2,9 @@ package com.plano.saude.cadastro.controller;
 
 import com.plano.saude.cadastro.domain.consulta.AgendaDeConsultas;
 import com.plano.saude.cadastro.domain.consulta.DadosAgendamentoConsulta;
+import com.plano.saude.cadastro.domain.consulta.DadosCancelamentoConsulta;
 import com.plano.saude.cadastro.domain.consulta.DadosDetalhamentoConsulta;
+import com.plano.saude.cadastro.domain.consulta.MotivoCancelamento;
 import com.plano.saude.cadastro.domain.medico.Especialidade;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,6 +24,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 @SpringBootTest
@@ -37,6 +40,9 @@ class ConsultaControllerTest {
 
     @Autowired
     private JacksonTester<DadosDetalhamentoConsulta> dadosDetalhamentoConsultaJson;
+
+    @Autowired
+    private JacksonTester<DadosCancelamentoConsulta> dadosCancelamentoConsultaJson;
 
     @MockBean
     private AgendaDeConsultas agendaDeConsultas;
@@ -77,5 +83,31 @@ class ConsultaControllerTest {
         var jsonEsperado = dadosDetalhamentoConsultaJson.write(dadosDetalhamento).getJson();
 
         assertThat(response.getContentAsString()).isEqualTo(jsonEsperado);
+    }
+
+    @Test
+    @DisplayName("Deveria devolver código http 400, quando informações estão inválidas")
+    @WithMockUser
+    void cancelarCenario1() throws Exception {
+        var response = mvc.perform(delete("/consultas"))
+                .andReturn().getResponse();
+
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    @DisplayName("Deveria devolver código http 204, quando as informações estiverem válidas")
+    @WithMockUser
+    void cancelarCenario2() throws Exception {
+        var response = mvc
+                .perform(
+                        delete("/consultas")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(dadosCancelamentoConsultaJson.write(new DadosCancelamentoConsulta(1l, MotivoCancelamento.OUTROS)).getJson()
+                                )
+                )
+                .andReturn().getResponse();
+
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.NO_CONTENT.value());
     }
 }

@@ -15,6 +15,7 @@ public record DadosListagemBeneficiario(
         LocalDate dataAtualizacao,
         List<DadosListagemDocumento> documentos,
         Endereco endereco) {
+
     public DadosListagemBeneficiario(Beneficiario beneficiario){
         this(
                 beneficiario.getId(),

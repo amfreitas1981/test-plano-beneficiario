@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 @Table(name = "consultas")
 @Entity(name = "Consulta")
 @Getter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
@@ -45,7 +47,11 @@ public class Consulta {
     @Enumerated(EnumType.STRING)
     private MotivoCancelamento motivoCancelamento;
 
-    public Consulta(Long id, Medico medico, Beneficiario beneficiario, LocalDateTime data) {
+    public Consulta(DadosConsulta dados) {
+        this.medico = new Medico(dados.medico());
+        this.beneficiario = new Beneficiario(dados.beneficiario());
+        this.data = dados.data();
+        this.motivoCancelamento = dados.motivo();
     }
 
     public void cancelar(MotivoCancelamento motivo) {
