@@ -1,12 +1,14 @@
 package com.plano.saude.cadastro.controller;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.plano.saude.cadastro.domain.endereco.DadosEndereco;
 import com.plano.saude.cadastro.domain.endereco.Endereco;
-import com.plano.saude.cadastro.domain.medico.DadosCadastroMedico;
-import com.plano.saude.cadastro.domain.medico.DadosDetalhamentoMedico;
-import com.plano.saude.cadastro.domain.medico.Especialidade;
-import com.plano.saude.cadastro.domain.medico.Medico;
-import com.plano.saude.cadastro.domain.medico.MedicoRepository;
+import com.plano.saude.cadastro.domain.medico.*;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,20 +18,30 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -44,6 +56,9 @@ class MedicoControllerTest {
 
     @Autowired
     private JacksonTester<DadosDetalhamentoMedico> dadosDetalhamentoMedicoJson;
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record DadosMedicos(@JsonProperty("content") List<DadosListagemMedico> medicos) {};
 
     @MockBean
     private MedicoRepository medicoRepository;
@@ -86,32 +101,80 @@ class MedicoControllerTest {
         return new DadosEndereco("Rua xpto", "Bairro", "12345-789", "Cidade", "SP", "Casa", "123");
     }
 
-//    @Test
-//    @DisplayName("Deveria devolver código http 404, quando as informações estão inválidas")
-//    @WithMockUser
-//    void listarCenario1() throws Exception {
-////        Pageable pageable = Pageable.unpaged(Sort.by(new String[]{"Nome"}));
-//        Long id = 2L;
-//
-//        var repository = medicoRepository;
-//        Pageable pageable = (Pageable) repository.findAllByAtivoTrue(id);
-//
-//        // simulando que o pageable não existe
-//        given(repository).willThrow(EntityNotFoundException.class);
-//
-//        var response = mvc.perform(get("/medicos/{id}", id)).andReturn().getResponse();
-//
-//        assertThat(response.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
-//    }
+    @Test
+    @DisplayName("Deveria devolver código http 404, quando as informações estão inválidas")
+    @WithMockUser
+    void listarCenario1() throws Exception {
+        // Simular que o pageable não existe
+        given(medicoRepository.findAllByAtivoTrue(any())).willThrow(EntityNotFoundException.class);
+
+        var response = mvc.perform(get("/medicos")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse();
+
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
+    }
 
     @Test
     @DisplayName("Deveria devolver código http 200, quando as informações estiverem válidas")
     @WithMockUser
     void listarCenario2() throws Exception {
-        var response = mvc.perform(get("/medicos")).andReturn().getResponse();
+        // Arrange
 
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
-//        mvc.perform(get("/medicos")).andExpect(status().isOk());
+        /**
+         * Usadas as anotações @Builder e @AllArgsConstructor do Lombok na classe Medico.
+         * Assim ele gera um método estático que retorna um builder do objeto.
+         */
+        Medico medico = Medico.builder()
+                .id(1L)
+                .nome("Nome Medico")
+                .email("medico@doutor.com")
+                .crm("123456")
+                .telefone("11994567843")
+                .especialidade(Especialidade.CARDIOLOGIA)
+                .endereco(new Endereco())
+                .ativo(true)
+                .build();
+
+        Page<Medico> medicos = new PageImpl<>(List.of(medico));
+        when(medicoRepository.findAllByAtivoTrue(any(Pageable.class))).thenReturn(medicos);
+
+        // Act
+        var result = mvc.perform(get("/medicos")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+        objectMapper.registerModule(new JavaTimeModule());
+
+        DadosMedicos responseBody = null;
+        try {
+            String json = result.getResponse().getContentAsString();
+            responseBody = objectMapper.readValue(json, new TypeReference<DadosMedicos>() {});
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        DadosListagemMedico objectResult = responseBody.medicos().get(0);
+
+        // Asserts
+        assertNotNull(responseBody);
+        assertFalse(responseBody.medicos().isEmpty());
+        assertEquals(1, responseBody.medicos().size());
+
+        assertEquals(objectResult.id(), medico.getId());
+        assertEquals(objectResult.nome(), medico.getNome());
+        assertEquals(objectResult.email(), medico.getEmail());
+        assertEquals(objectResult.crm(), medico.getCrm());
+        assertEquals(objectResult.telefone(), medico.getTelefone());
+        assertEquals(objectResult.especialidade(), medico.getEspecialidade());
+
+        // Passado o endereço com atributos null. Não tem necessidade de validá-los
     }
 
     @Test
@@ -189,8 +252,61 @@ class MedicoControllerTest {
     @DisplayName("Deveria devolver código http 404, quando informações estão inválidas")
     @WithMockUser
     void detalharCenario1() throws Exception {
-        var response = mvc.perform(get("/medicos/1")).andReturn().getResponse();
+        Long id = 2L;
+
+        var repository = medicoRepository.getReferenceById(id);
+
+        // Simular que o id não existe
+        given(repository).willThrow(EntityNotFoundException.class);
+
+        var response = mvc.perform(get("/medicos/{id}", id)).andReturn().getResponse();
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
+    }
+
+    @Test
+    @DisplayName("Deveria devolver código http 200, quando as informações estiverem válidas")
+    @WithMockUser
+    void detalharCenario2() throws Exception {
+        Long id = 1L;
+
+        var repository = medicoRepository.getReferenceById(id);
+
+        DadosEndereco dadosEndereco = new DadosEndereco(
+                "Rua",
+                "Barrio",
+                "05000-000",
+                "Cidadela",
+                "YY",
+                "Barraco",
+                "957"
+        );
+
+        DadosAtualizacaoMedico dadosAtualizacaoMedico = new DadosAtualizacaoMedico(
+                null,
+                "Nome Medico Atualizado",
+                "11987456218",
+                dadosEndereco
+        );
+
+        DadosDetalhamentoMedico dadosDetalhamentoMedico = new DadosDetalhamentoMedico(
+                null,
+                dadosAtualizacaoMedico.nome(),
+                "email@email.com",
+                "666666",
+                dadosAtualizacaoMedico.telefone(),
+                Especialidade.DERMATOLOGIA,
+                new Endereco()
+        );
+
+        when(medicoRepository.getReferenceById(anyLong())).thenReturn(new Medico(dadosDetalhamentoMedico));
+
+        var response = mvc.perform(get("/medicos/{id}", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(dadosDetalhamentoMedicoJson.write(dadosDetalhamentoMedico).getJson())
+                )
+                .andReturn().getResponse();
+
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
     }
 }

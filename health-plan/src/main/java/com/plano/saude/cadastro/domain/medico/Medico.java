@@ -50,6 +50,15 @@ public class Medico {
         this.ativo = true;
     }
 
+    public Medico(DadosDetalhamentoMedico dados) {
+        this.nome = dados.nome();
+        this.email = dados.email();
+        this.crm = dados.crm();
+        this.telefone = dados.telefone();
+        this.especialidade = dados.especialidade();
+        this.endereco = new Endereco(dados.endereco());
+    }
+
     public void atualizarInformacoes(DadosAtualizacaoMedico dados) {
         if (dados.nome() != null){
             this.nome = dados.nome();
