@@ -1,10 +1,7 @@
 package com.plano.saude.cadastro.controller;
 
-import com.plano.saude.cadastro.domain.usuario.DadosAutenticacao;
-import com.plano.saude.cadastro.domain.usuario.DadosCadastroUsuario;
-import com.plano.saude.cadastro.domain.usuario.DadosUsuario;
-import com.plano.saude.cadastro.domain.usuario.Usuario;
-import com.plano.saude.cadastro.domain.usuario.UsuarioService;
+import com.plano.saude.cadastro.domain.perfil.Perfil;
+import com.plano.saude.cadastro.domain.usuario.*;
 import com.plano.saude.cadastro.infra.security.DadosToken;
 import com.plano.saude.cadastro.infra.security.TokenService;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +18,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -58,13 +58,17 @@ class LoginControllerTest {
     private AuthenticationManager authenticationManager;
 
     @Test
-    @DisplayName("Deveria devolver código http 400, quando informações estão inválidas")
+    @DisplayName("Deveria devolver código http 401, quando informações estão inválidas")
     @WithMockUser
     void efetuateLoginCenario1() throws Exception {
-        var response = mvc.perform(post("/login"))
+        var dadosAutenticacao = new DadosAutenticacao("user.test@plano.saude", "12345");
+
+        var response = mvc.perform(post("/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(dadosAutenticacaoJson.write(dadosAutenticacao).getJson()))
                 .andReturn().getResponse();
 
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
     }
 
     @Test
@@ -73,20 +77,29 @@ class LoginControllerTest {
     void efetuateLoginCenario2() throws Exception {
         var dadosAutenticacao = new DadosAutenticacao("user.test@plano.saude", "12345");
 
+        DadosCadastroUsuario dadosCadastroUsuario = new DadosCadastroUsuario(
+                "Nome Cadastro Usuario",
+                "user.test@plano.com",
+                "12345",
+                true
+        );
+
+        List<Perfil> perfis = new ArrayList<>();
+
+        var usuario = new Usuario(dadosCadastroUsuario, "12345", perfis);
+
         // Mock do TokenService para retornar um token fictício
-        when(tokenService.generateToken(any(Usuario.class))).thenReturn("token_ficticio");
+        when(tokenService.generateToken(usuario)).thenReturn("token_ficticio");
 
         // Mock do AuthenticationManager para simular uma autenticação bem-sucedida
         Authentication authentication = mock(Authentication.class);
+
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authenticationManager.authenticate(any(Authentication.class))).thenReturn(authentication);
 
-        var response = mvc
-                .perform(
-                        post("/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(dadosAutenticacaoJson.write(dadosAutenticacao).getJson())
-                )
+        var response = mvc.perform(post("/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(dadosAutenticacaoJson.write(dadosAutenticacao).getJson()))
                 .andReturn().getResponse();
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
