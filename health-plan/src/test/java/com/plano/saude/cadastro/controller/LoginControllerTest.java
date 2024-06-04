@@ -1,6 +1,5 @@
 package com.plano.saude.cadastro.controller;
 
-import com.plano.saude.cadastro.domain.perfil.Perfil;
 import com.plano.saude.cadastro.domain.usuario.*;
 import com.plano.saude.cadastro.infra.security.DadosToken;
 import com.plano.saude.cadastro.infra.security.TokenService;
@@ -15,16 +14,15 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -37,13 +35,16 @@ class LoginControllerTest {
     private MockMvc mvc;
 
     @Autowired
+    private BCryptPasswordEncoder encoder;
+
+    @Autowired
     private JacksonTester<DadosAutenticacao> dadosAutenticacaoJson;
 
     @Autowired
     private JacksonTester<DadosCadastroUsuario> dadosCadastroUsuarioJson;
 
     @Autowired
-    private JacksonTester<DadosUsuario> dadosDadosUsuarioJson;
+    private JacksonTester<DadosUsuario> dadosUsuarioJson;
 
     @Autowired
     private JacksonTester<DadosToken> dadosTokenJson;
@@ -75,27 +76,34 @@ class LoginControllerTest {
     @DisplayName("Deveria devolver código http 200, quando as informações estiverem válidas")
     @WithMockUser
     void efetuateLoginCenario2() throws Exception {
+        /* Este aqui substituirá o usuário que deveria ser recuperado do banco de dados.
+         *
+         * Se não criptografar a senha, não irá funcionar, pois o DaoAuthenticationProvider
+         * (ele é chamado pelo AuthenticationManager) está esperando uma senha criptografada
+         * para o objeto que é recuperado do banco de dados.
+         */
+        Usuario usuario = Usuario.builder()
+                .id(1L)
+                .nome("Senhor Usuario")
+                .login("user.test@plano.saude")
+                .password(encoder.encode("12345"))
+                .build();
+
+        // Será o requestBody
         var dadosAutenticacao = new DadosAutenticacao("user.test@plano.saude", "12345");
 
-        DadosCadastroUsuario dadosCadastroUsuario = new DadosCadastroUsuario(
-                "Nome Cadastro Usuario",
-                "user.test@plano.com",
-                "12345",
-                true
-        );
-
-        List<Perfil> perfis = new ArrayList<>();
-
-        var usuario = new Usuario(dadosCadastroUsuario, "12345", perfis);
-
-        // Mock do TokenService para retornar um token fictício
-        when(tokenService.generateToken(usuario)).thenReturn("token_ficticio");
-
-        // Mock do AuthenticationManager para simular uma autenticação bem-sucedida
-        Authentication authentication = mock(Authentication.class);
-
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(authenticationManager.authenticate(any(Authentication.class))).thenReturn(authentication);
+        /* Nesse projeto a classe UsuarioService implementa a interface UserDetailsService.
+         *
+         * O método `authenticate` do AuthenticationManager, por baixo dos panos faz
+         * uma chamada ao `loadUserByUsername` a partir da interface UserDetailsService
+         * para recuperar o usuário do banco de dados e comparar com os dados enviados
+         * pelo cliente.
+         *
+         * Como esse é um teste de unidade, esse passo será mockado para ceder os
+         * dados necessários para o resto da lógica de autenticação fluir.
+         *
+         */
+        when(usuarioService.loadUserByUsername(any())).thenReturn(usuario);
 
         var response = mvc.perform(post("/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -104,9 +112,34 @@ class LoginControllerTest {
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
 
-        var jsonRetorno = dadosTokenJson.write(new DadosToken("token_ficticio")).getJson();
+        // Dessa forma, podemos utilizar mais uma assertion, para saber se o formato do token é válido:
+        var tokens = dadosTokenJson
+                .parseObject(response.getContentAsString())
+                .token();
+        List<String> tokenParts = List.of(tokens.split("\\."));
+        assertThat(this.isFormatTokenValid(tokenParts)).isTrue();
+    }
 
-        assertThat(response.getContentAsString()).isEqualTo(jsonRetorno);
+    /* Para validar o token, é utilizada a lógica abaixo: */
+    /* O JWT é dividido em 3 partes, header, payload e signature, separados
+     * pelo caractere de ponto. Por isso é necessário validar se foi possível
+     * dividir ele em 3 partes.
+     *
+     * O JWT é codificado em Base64Url, por isso usamos o Base64 URL decoder
+     * para decodificar as partes, onde, caso a decodificação falhe, é lançada
+     * uma exceção que é capturada para retornar false, negando a validade do token.
+     * */
+    boolean isFormatTokenValid(List<String> tokenParts) {
+        if (tokenParts.size() != 3)
+            return false;
+
+        try {
+            tokenParts.forEach(part -> Base64.getUrlDecoder().decode(part));
+            return true;
+
+        } catch(IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     @Test
@@ -139,7 +172,7 @@ class LoginControllerTest {
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
 
-        var jsonRetorno = dadosDadosUsuarioJson.write(dadosUsuario).getJson();
+        var jsonRetorno = dadosUsuarioJson.write(dadosUsuario).getJson();
 
         assertThat(response.getContentAsString()).isEqualTo(jsonRetorno);
     }
