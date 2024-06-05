@@ -1,6 +1,10 @@
 package com.plano.saude.cadastro.controller;
 
-import com.plano.saude.cadastro.domain.usuario.*;
+import com.plano.saude.cadastro.domain.usuario.DadosAutenticacao;
+import com.plano.saude.cadastro.domain.usuario.DadosCadastroUsuario;
+import com.plano.saude.cadastro.domain.usuario.DadosUsuario;
+import com.plano.saude.cadastro.domain.usuario.Usuario;
+import com.plano.saude.cadastro.domain.usuario.UsuarioService;
 import com.plano.saude.cadastro.infra.security.DadosToken;
 import com.plano.saude.cadastro.infra.security.TokenService;
 import org.junit.jupiter.api.DisplayName;
