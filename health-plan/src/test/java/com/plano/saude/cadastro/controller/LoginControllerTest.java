@@ -6,7 +6,6 @@ import com.plano.saude.cadastro.domain.usuario.DadosUsuario;
 import com.plano.saude.cadastro.domain.usuario.Usuario;
 import com.plano.saude.cadastro.domain.usuario.UsuarioService;
 import com.plano.saude.cadastro.infra.security.DadosToken;
-import com.plano.saude.cadastro.infra.security.TokenService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +16,6 @@ import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -55,12 +53,6 @@ class LoginControllerTest {
 
     @MockBean
     private UsuarioService usuarioService;
-
-    @MockBean
-    private TokenService tokenService;
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
 
     @Test
     @DisplayName("Deveria devolver código http 401, quando informações estão inválidas")
@@ -117,11 +109,11 @@ class LoginControllerTest {
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
 
         // Dessa forma, podemos utilizar mais uma assertion, para saber se o formato do token é válido:
-//        var tokens = dadosTokenJson
-//                .parseObject(response.getContentAsString())
-//                .token();
-//        List<String> tokenParts = List.of(tokens.split("\\."));
-//        assertThat(this.isFormatTokenValid(tokenParts)).isTrue();
+        var tokens = dadosTokenJson
+                .parseObject(response.getContentAsString())
+                .token();
+        List<String> tokenParts = List.of(tokens.split("\\."));
+        assertThat(this.isFormatTokenValid(tokenParts)).isTrue();
     }
 
     /* Para validar o token, é utilizada a lógica abaixo: */
