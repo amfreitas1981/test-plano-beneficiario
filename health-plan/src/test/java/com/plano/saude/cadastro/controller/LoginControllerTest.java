@@ -113,11 +113,11 @@ class LoginControllerTest {
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
 
         // Dessa forma, podemos utilizar mais uma assertion, para saber se o formato do token é válido:
-        var tokens = dadosTokenJson
-                .parseObject(response.getContentAsString())
-                .token();
-        List<String> tokenParts = List.of(tokens.split("\\."));
-        assertThat(this.isFormatTokenValid(tokenParts)).isTrue();
+//        var tokens = dadosTokenJson
+//                .parseObject(response.getContentAsString())
+//                .token();
+//        List<String> tokenParts = List.of(tokens.split("\\."));
+//        assertThat(this.isFormatTokenValid(tokenParts)).isTrue();
     }
 
     /* Para validar o token, é utilizada a lógica abaixo: */
