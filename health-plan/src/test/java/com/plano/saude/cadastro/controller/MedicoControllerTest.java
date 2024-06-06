@@ -8,7 +8,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.plano.saude.cadastro.domain.endereco.DadosEndereco;
 import com.plano.saude.cadastro.domain.endereco.Endereco;
-import com.plano.saude.cadastro.domain.medico.*;
+import com.plano.saude.cadastro.domain.medico.DadosAtualizacaoMedico;
+import com.plano.saude.cadastro.domain.medico.DadosCadastroMedico;
+import com.plano.saude.cadastro.domain.medico.DadosDetalhamentoMedico;
+import com.plano.saude.cadastro.domain.medico.DadosListagemMedico;
+import com.plano.saude.cadastro.domain.medico.Especialidade;
+import com.plano.saude.cadastro.domain.medico.Medico;
+import com.plano.saude.cadastro.domain.medico.MedicoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,6 +59,9 @@ class MedicoControllerTest {
 
     @Autowired
     private JacksonTester<DadosCadastroMedico> dadosCadastroMedicoJson;
+
+    @Autowired
+    private JacksonTester<DadosAtualizacaoMedico> dadosAtualizacaoMedicoJson;
 
     @Autowired
     private JacksonTester<DadosDetalhamentoMedico> dadosDetalhamentoMedicoJson;
@@ -184,6 +193,56 @@ class MedicoControllerTest {
         var response = mvc.perform(put("/medicos")).andReturn().getResponse();
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    @DisplayName("Deveria devolver código http 200, quando as informações estão inválidas")
+    @WithMockUser
+    void atualizarCenario2() throws Exception {
+        DadosEndereco dadosEndereco = new DadosEndereco(
+                "Rua Morada do Beneficiario",
+                "Bairro",
+                "12345-789",
+                "Cidade",
+                "SP",
+                "Casa",
+                "789");
+
+        DadosAtualizacaoMedico dadosAtualizacaoMedico = new DadosAtualizacaoMedico(
+                1L,
+                "Nome Medico Atualizado",
+                "1174588639",
+                dadosEndereco
+        );
+
+        // Considerando que sua classe Endereco tenha um construtor que receba um objeto DadosEndereco:
+        var enderecoEsperado = new Endereco(dadosAtualizacaoMedico.endereco());
+
+        DadosDetalhamentoMedico dadosDetalhamentoMedico = new DadosDetalhamentoMedico(
+                null,
+                dadosAtualizacaoMedico.nome(),
+                "email@email.com",
+                "456123",
+                dadosAtualizacaoMedico.telefone(),
+                Especialidade.DERMATOLOGIA,
+                enderecoEsperado
+        );
+
+        // Simular que o id existe
+        when(medicoRepository.getReferenceById(any())).thenReturn(new Medico(dadosDetalhamentoMedico));
+
+        var response = mvc
+                .perform(
+                        put("/medicos")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(dadosAtualizacaoMedicoJson.write(dadosAtualizacaoMedico).getJson()))
+                .andReturn().getResponse();
+
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+
+        String jsonEsperado = dadosDetalhamentoMedicoJson.write(dadosDetalhamentoMedico).getJson();
+
+        assertThat(response.getContentAsString()).isEqualTo(jsonEsperado);
     }
 
     @Test

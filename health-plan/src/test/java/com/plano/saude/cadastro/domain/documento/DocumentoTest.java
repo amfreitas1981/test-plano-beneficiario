@@ -1,12 +1,12 @@
 package com.plano.saude.cadastro.domain.documento;
 
-import com.plano.saude.cadastro.domain.beneficiario.Beneficiario;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static com.plano.saude.cadastro.util.BeneficiarioCreator.createBeneficiarioToBeSaved;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class DocumentoTest {
 
@@ -18,7 +18,7 @@ class DocumentoTest {
                 TipoDocumento.CARTEIRA_NACIONAL_HABILITACAO,
                 "123456",
                 LocalDate.parse("2023-11-01"),
-                Beneficiario.builder().build(),
+                createBeneficiarioToBeSaved(),
                 "Descricao",
                 LocalDate.parse("2023-11-11"),
                 LocalDate.parse("2023-12-21"),
