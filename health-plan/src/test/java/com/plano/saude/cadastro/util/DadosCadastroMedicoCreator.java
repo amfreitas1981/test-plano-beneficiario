@@ -6,7 +6,7 @@ import com.plano.saude.cadastro.domain.medico.Especialidade;
 
 public class DadosCadastroMedicoCreator {
 
-    static DadosEndereco dadosEndereco = new DadosEndereco(
+    public static DadosEndereco dadosEndereco = new DadosEndereco(
             "Rua xpto",
             "Bairro",
             "12345-789",

@@ -11,7 +11,7 @@ import java.util.List;
 
 public class DadosListagemBeneficiarioCreator {
 
-    static List<DadosListagemDocumento> dadosListagemDocumento = Collections.singletonList(new DadosListagemDocumento(
+    public static List<DadosListagemDocumento> dadosListagemDocumento = Collections.singletonList(new DadosListagemDocumento(
             null,
             TipoDocumento.CARTEIRA_IDENTIDADE,
             "43789563",
@@ -21,7 +21,7 @@ public class DadosListagemBeneficiarioCreator {
             LocalDate.parse("2024-04-16")
     ));
 
-    static Endereco endereco = new Endereco(
+    public static Endereco endereco = new Endereco(
             "Rua",
             "Vila da Esperanca",
             "01000-000",

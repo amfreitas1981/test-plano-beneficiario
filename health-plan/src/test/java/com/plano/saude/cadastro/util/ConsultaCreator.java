@@ -12,7 +12,7 @@ import static com.plano.saude.cadastro.util.BeneficiarioCreator.*;
 
 public class ConsultaCreator {
 
-    static Endereco endereco = new Endereco(
+    public static Endereco endereco = new Endereco(
             "Rua",
             "Vila da Esperanca",
             "01000-000",

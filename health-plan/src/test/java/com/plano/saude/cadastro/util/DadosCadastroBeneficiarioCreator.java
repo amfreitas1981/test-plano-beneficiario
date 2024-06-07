@@ -10,7 +10,7 @@ import java.util.Collections;
 
 public class DadosCadastroBeneficiarioCreator {
 
-    static DadosCadastroDocumento dadosCadastroDocumento = new DadosCadastroDocumento(
+    public static DadosCadastroDocumento dadosCadastroDocumento = new DadosCadastroDocumento(
             TipoDocumento.CARTEIRA_NACIONAL_HABILITACAO,
             "123456789",
             LocalDate.parse("2010-03-18"),
@@ -19,7 +19,7 @@ public class DadosCadastroBeneficiarioCreator {
             LocalDate.parse("2023-12-18")
     );
 
-    static DadosEndereco dadosEndereco = new DadosEndereco(
+    public static DadosEndereco dadosEndereco = new DadosEndereco(
             "Rua xpto",
             "Bairro",
             "12345-789",

@@ -12,7 +12,7 @@ import static com.plano.saude.cadastro.util.DadosCadastroBeneficiarioCreator.cre
 
 public class DadosConsultaCreator {
 
-    static DadosEndereco dadosEndereco = new DadosEndereco(
+    public static DadosEndereco dadosEndereco = new DadosEndereco(
             "Rua xpto",
             "Bairro",
             "12345-789",
@@ -22,7 +22,7 @@ public class DadosConsultaCreator {
             "789"
     );
 
-    static DadosCadastroMedico dadosCadastroMedico = new DadosCadastroMedico(
+    public static DadosCadastroMedico dadosCadastroMedico = new DadosCadastroMedico(
             "Nome Cadastro Medico",
             "email@email.com",
             "654321",

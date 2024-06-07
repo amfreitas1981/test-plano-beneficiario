@@ -10,7 +10,7 @@ import java.util.Collections;
 
 public class BeneficiarioCreator {
 
-    static Documento documentos = new Documento(
+    public static Documento documentos = new Documento(
             1L,
             TipoDocumento.CARTEIRA_NACIONAL_HABILITACAO,
             "123456",
@@ -22,7 +22,7 @@ public class BeneficiarioCreator {
             true
     );
 
-    static Endereco endereco = new Endereco(
+    public static Endereco endereco = new Endereco(
             "Rua",
             "Vila da Esperanca",
             "01000-000",
