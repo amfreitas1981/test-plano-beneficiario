@@ -65,7 +65,7 @@ class ConsultaControllerTest {
 
         var dadosDetalhamento = new DadosDetalhamentoConsulta(null, 2l, 5l, data);
 
-        //usando o Mockito
+        // Usando o Mockito
         when(agendaDeConsultas.agendar(any())).thenReturn(dadosDetalhamento);
 
         var response = mvc
